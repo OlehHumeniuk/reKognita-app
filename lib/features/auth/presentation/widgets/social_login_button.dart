@@ -8,6 +8,7 @@ class SocialLoginButton extends StatelessWidget {
     required this.foregroundColor,
     required this.onTap,
     this.borderColor,
+    this.enabled = true,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class SocialLoginButton extends StatelessWidget {
   final Color foregroundColor;
   final Color? borderColor;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,7 @@ class SocialLoginButton extends StatelessWidget {
       color: backgroundColor,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           width: double.infinity,
@@ -41,7 +43,9 @@ class SocialLoginButton extends StatelessWidget {
               Text(
                 label,
                 style: TextStyle(
-                  color: foregroundColor,
+                  color: enabled
+                      ? foregroundColor
+                      : foregroundColor.withValues(alpha: 0.5),
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),

@@ -67,7 +67,10 @@ class LoginPage extends StatelessWidget {
                                 icon: Icons.g_mobiledata_rounded,
                                 backgroundColor: Colors.white,
                                 foregroundColor: AppColors.dark,
-                                onTap: authController.loginWithMock,
+                                enabled: !authController.isLoading,
+                                onTap: () {
+                                  authController.loginWithGoogle();
+                                },
                               ),
                               const SizedBox(height: 12),
                               SocialLoginButton(
@@ -78,7 +81,10 @@ class LoginPage extends StatelessWidget {
                                 borderColor: Colors.white.withValues(
                                   alpha: 0.15,
                                 ),
-                                onTap: authController.loginWithMock,
+                                enabled: !authController.isLoading,
+                                onTap: () {
+                                  authController.loginWithApple();
+                                },
                               ),
                               const SizedBox(height: 16),
                               const Row(

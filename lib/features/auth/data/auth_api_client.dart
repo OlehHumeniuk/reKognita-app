@@ -24,8 +24,42 @@ class AuthApiClient {
       body: jsonEncode({'email': email, 'password': password}),
     );
 
-    if (response.statusCode != 200) {
-      String message = 'Login failed';
+    return _parseAuthResponse(response, defaultMessage: 'Login failed');
+  }
+
+  Future<AuthSession> loginWithSocial({
+    required String provider,
+    required String idToken,
+    String? email,
+    String? fullName,
+  }) async {
+    final uri = Uri.parse(
+      '${BackendConfig.baseUrl}${BackendConfig.apiPrefix}/auth/social/$provider',
+    );
+
+    final body = <String, dynamic>{'id_token': idToken};
+    if (email != null && email.isNotEmpty) {
+      body['email'] = email;
+    }
+    if (fullName != null && fullName.isNotEmpty) {
+      body['full_name'] = fullName;
+    }
+
+    final response = await _httpClient.post(
+      uri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    return _parseAuthResponse(response, defaultMessage: 'Social login failed');
+  }
+
+  AuthSession _parseAuthResponse(
+    http.Response response, {
+    required String defaultMessage,
+  }) {
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      String message = defaultMessage;
       try {
         final map = jsonDecode(response.body) as Map<String, dynamic>;
         message = map['detail']?.toString() ?? message;
