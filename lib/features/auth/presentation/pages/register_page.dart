@@ -1,10 +1,16 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
 import 'package:rekognita_app/features/auth/presentation/providers/auth_controller.dart';
 import 'package:rekognita_app/features/auth/presentation/widgets/social_login_button.dart';
+import 'package:rekognita_app/features/billing/data/billing_api_client.dart';
+import 'package:rekognita_app/features/billing/domain/entities/plan_item.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+// ─── RegisterPage ──────────────────────────────────────────────────────────
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({required this.authController, super.key});
@@ -18,8 +24,8 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   int _step = 0;
 
-  // Step 1 — identity (email path)
-  final _nameCtrl = TextEditingController();
+  // Step 1 — identity
+  final _loginCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
@@ -28,17 +34,47 @@ class _RegisterPageState extends State<RegisterPage> {
   // Step 2 — company
   final _companyCtrl = TextEditingController();
   String? _step2Error;
-
-  // Whether social login was used (no password needed)
   bool _socialRegistered = false;
 
   // Step 3 — payment
+  List<PlanItem> _plans = [];
+  bool _plansLoading = false;
   bool _paymentLoading = false;
   String? _paymentError;
+  bool _paymentSuccess = false;
+
+  final _billingApi = BillingApiClient();
+  StreamSubscription<Uri>? _linkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _linkSub = AppLinks().uriLinkStream.listen(_onDeepLink);
+    _loadPlans();
+  }
+
+  Future<void> _loadPlans() async {
+    setState(() => _plansLoading = true);
+    try {
+      final plans = await _billingApi.fetchPlans();
+      if (mounted) setState(() => _plans = plans);
+    } catch (_) {
+      // keep empty list; step 3 shows a retry
+    } finally {
+      if (mounted) setState(() => _plansLoading = false);
+    }
+  }
+
+  void _onDeepLink(Uri uri) {
+    if (uri.scheme == 'rekognita' && uri.host == 'payment' && mounted) {
+      setState(() => _paymentSuccess = true);
+    }
+  }
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
+    _linkSub?.cancel();
+    _loginCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _confirmCtrl.dispose();
@@ -49,13 +85,13 @@ class _RegisterPageState extends State<RegisterPage> {
   void _nextStep() => setState(() => _step++);
 
   void _validateStep1() {
-    final name = _nameCtrl.text.trim();
+    final login = _loginCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text;
     final confirm = _confirmCtrl.text;
 
-    if (name.length < 2) {
-      setState(() => _step1Error = "Введіть ім'я (мін. 2 символи)");
+    if (login.length < 2) {
+      setState(() => _step1Error = 'Введіть логін (мін. 2 символи)');
       return;
     }
     if (!email.contains('@')) {
@@ -92,7 +128,7 @@ class _RegisterPageState extends State<RegisterPage> {
     await widget.authController.register(
       email: _emailCtrl.text.trim(),
       password: _passCtrl.text,
-      fullName: _nameCtrl.text.trim(),
+      fullName: _loginCtrl.text.trim(),
       companyName: _companyCtrl.text.trim(),
     );
     if (!mounted) return;
@@ -110,15 +146,22 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  Future<void> _payWithMono() async {
+  Future<void> _payPlan(PlanItem plan) async {
+    if (plan.price == 0) {
+      Navigator.of(context).pop();
+      return;
+    }
+    final token = widget.authController.accessToken;
+    if (token == null) return;
     setState(() {
       _paymentLoading = true;
       _paymentError = null;
     });
     try {
-      final url = await widget.authController.createMonoInvoice(50);
+      final invoice = await _billingApi.createInvoice(plan.id, token);
+      final url = invoice['pageUrl'] as String?;
       if (url == null) {
-        setState(() => _paymentError = widget.authController.error ?? 'Помилка створення рахунку');
+        setState(() => _paymentError = 'Помилка створення рахунку');
         return;
       }
       final uri = Uri.parse(url);
@@ -132,7 +175,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  void _skipPayment() => Navigator.of(context).pop();
+  void _goToApp() => Navigator.of(context).pop();
 
   @override
   Widget build(BuildContext context) {
@@ -149,18 +192,12 @@ class _RegisterPageState extends State<RegisterPage> {
               const Positioned(
                 top: -120,
                 left: -120,
-                child: _GlowCircle(
-                  size: 480,
-                  color: Color(0x2E2563EB),
-                ),
+                child: _GlowCircle(size: 480, color: Color(0x2E2563EB)),
               ),
               const Positioned(
                 bottom: -80,
                 right: -80,
-                child: _GlowCircle(
-                  size: 360,
-                  color: Color(0x1F3B82F6),
-                ),
+                child: _GlowCircle(size: 360, color: Color(0x1F3B82F6)),
               ),
               Center(
                 child: SingleChildScrollView(
@@ -186,16 +223,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Реєстрація',
-                          style: TextStyle(color: Color(0x73FFFFFF)),
-                        ),
-                        const SizedBox(height: 20),
-
-                        // Step indicator
-                        _StepIndicator(currentStep: _step),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
 
                         // Steps
                         AnimatedSwitcher(
@@ -207,21 +235,31 @@ class _RegisterPageState extends State<RegisterPage> {
                             ).animate(anim),
                             child: FadeTransition(opacity: anim, child: child),
                           ),
-                          child: _buildStep(key: ValueKey(_step)),
+                          child: _buildStep(
+                            key: ValueKey(_paymentSuccess ? 'success' : _step),
+                          ),
                         ),
+                        const SizedBox(height: 14),
 
-                        const SizedBox(height: 16),
-                        // Back to login
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
+                        // Step indicator — bottom
+                        if (!_paymentSuccess) _StepIndicator(currentStep: _step),
+                        const SizedBox(height: 20),
+
+                        // Login link — visible
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
                           child: const Text(
                             'Вже є акаунт? Увійти',
                             style: TextStyle(
-                              color: Color(0x80FFFFFF),
-                              fontSize: 13,
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.white54,
                             ),
                           ),
                         ),
+                        const SizedBox(height: 8),
                       ],
                     ),
                   ),
@@ -235,11 +273,14 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Widget _buildStep({required ValueKey key}) {
+    if (_paymentSuccess) {
+      return _PaymentSuccessCard(key: key, onGoToApp: _goToApp);
+    }
     switch (_step) {
       case 0:
         return _Step1Identity(
           key: key,
-          nameCtrl: _nameCtrl,
+          loginCtrl: _loginCtrl,
           emailCtrl: _emailCtrl,
           passCtrl: _passCtrl,
           confirmCtrl: _confirmCtrl,
@@ -260,10 +301,12 @@ class _RegisterPageState extends State<RegisterPage> {
       default:
         return _Step3Payment(
           key: key,
-          loading: _paymentLoading,
+          plans: _plans,
+          plansLoading: _plansLoading,
+          paymentLoading: _paymentLoading,
           error: _paymentError,
-          onPay: _payWithMono,
-          onSkip: _skipPayment,
+          onPay: _payPlan,
+          onRetryPlans: _loadPlans,
         );
     }
   }
@@ -273,7 +316,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
 class _Step1Identity extends StatefulWidget {
   const _Step1Identity({
-    required this.nameCtrl,
+    required this.loginCtrl,
     required this.emailCtrl,
     required this.passCtrl,
     required this.confirmCtrl,
@@ -285,7 +328,7 @@ class _Step1Identity extends StatefulWidget {
     super.key,
   });
 
-  final TextEditingController nameCtrl;
+  final TextEditingController loginCtrl;
   final TextEditingController emailCtrl;
   final TextEditingController passCtrl;
   final TextEditingController confirmCtrl;
@@ -344,9 +387,18 @@ class _Step1IdentityState extends State<_Step1Identity> {
             ],
           ),
           const SizedBox(height: 14),
-          _TextField(controller: widget.nameCtrl, label: "Ім'я та прізвище", icon: Icons.person_outline_rounded),
+          _TextField(
+            controller: widget.loginCtrl,
+            label: 'Логін',
+            icon: Icons.person_outline_rounded,
+          ),
           const SizedBox(height: 10),
-          _TextField(controller: widget.emailCtrl, label: 'Email', icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
+          _TextField(
+            controller: widget.emailCtrl,
+            label: 'Email',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+          ),
           const SizedBox(height: 10),
           _TextField(
             controller: widget.passCtrl,
@@ -354,7 +406,11 @@ class _Step1IdentityState extends State<_Step1Identity> {
             icon: Icons.lock_outline_rounded,
             obscureText: _obscurePass,
             suffix: IconButton(
-              icon: Icon(_obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 18, color: Colors.white38),
+              icon: Icon(
+                _obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                size: 18,
+                color: Colors.white38,
+              ),
               onPressed: () => setState(() => _obscurePass = !_obscurePass),
             ),
           ),
@@ -365,13 +421,21 @@ class _Step1IdentityState extends State<_Step1Identity> {
             icon: Icons.lock_outline_rounded,
             obscureText: _obscureConfirm,
             suffix: IconButton(
-              icon: Icon(_obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 18, color: Colors.white38),
+              icon: Icon(
+                _obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                size: 18,
+                color: Colors.white38,
+              ),
               onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
             ),
           ),
           if (widget.error != null) ...[
             const SizedBox(height: 10),
-            Text(widget.error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12), textAlign: TextAlign.center),
+            Text(
+              widget.error!,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
           ],
           const SizedBox(height: 16),
           _PrimaryButton(label: 'Далі →', loading: widget.loading, onTap: widget.onNext),
@@ -408,7 +472,11 @@ class _Step2Company extends StatelessWidget {
             style: TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 0.5),
           ),
           const SizedBox(height: 14),
-          _TextField(controller: companyCtrl, label: 'Назва компанії', icon: Icons.apartment_rounded),
+          _TextField(
+            controller: companyCtrl,
+            label: 'Назва компанії',
+            icon: Icons.apartment_rounded,
+          ),
           const SizedBox(height: 8),
           const Text(
             'Назву компанії можна змінити в налаштуваннях пізніше',
@@ -417,7 +485,11 @@ class _Step2Company extends StatelessWidget {
           ),
           if (error != null) ...[
             const SizedBox(height: 10),
-            Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12), textAlign: TextAlign.center),
+            Text(
+              error!,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
           ],
           const SizedBox(height: 16),
           _PrimaryButton(label: 'Далі →', loading: loading, onTap: onNext),
@@ -427,21 +499,45 @@ class _Step2Company extends StatelessWidget {
   }
 }
 
-// ─── Step 3: Payment ───────────────────────────────────────────────────────
+// ─── Step 3: Payment carousel ──────────────────────────────────────────────
 
-class _Step3Payment extends StatelessWidget {
+class _Step3Payment extends StatefulWidget {
   const _Step3Payment({
+    required this.plans,
+    required this.plansLoading,
+    required this.paymentLoading,
     required this.onPay,
-    required this.onSkip,
-    this.loading = false,
+    required this.onRetryPlans,
     this.error,
     super.key,
   });
 
-  final bool loading;
+  final List<PlanItem> plans;
+  final bool plansLoading;
+  final bool paymentLoading;
   final String? error;
-  final VoidCallback onPay;
-  final VoidCallback onSkip;
+  final void Function(PlanItem plan) onPay;
+  final VoidCallback onRetryPlans;
+
+  @override
+  State<_Step3Payment> createState() => _Step3PaymentState();
+}
+
+class _Step3PaymentState extends State<_Step3Payment> {
+  late final PageController _pageCtrl;
+  int _currentPlan = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageCtrl = PageController(initialPage: _currentPlan, viewportFraction: 0.82);
+  }
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -454,69 +550,213 @@ class _Step3Payment extends StatelessWidget {
             style: TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 0.5),
           ),
           const SizedBox(height: 16),
-          // Summary card
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.brand.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
+
+          if (widget.plansLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: CircularProgressIndicator(color: AppColors.brandLight),
+              ),
+            )
+          else if (widget.plans.isEmpty)
+            Center(
+              child: Column(
+                children: [
+                  const Text(
+                    'Не вдалося завантажити плани',
+                    style: TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: widget.onRetryPlans,
+                    child: const Text('Повторити', style: TextStyle(color: AppColors.brandLight)),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            // Plan carousel
+            SizedBox(
+              height: 148,
+              child: PageView.builder(
+                controller: _pageCtrl,
+                itemCount: widget.plans.length,
+                onPageChanged: (i) => setState(() => _currentPlan = i),
+                itemBuilder: (_, i) => _PlanCarouselCard(
+                  plan: widget.plans[i],
+                  selected: i == _currentPlan,
+                ),
+              ),
             ),
-            child: Column(
-              children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Тариф', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                    Text('Cloud', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Сторінок', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                    Text('50', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Divider(color: Colors.white.withValues(alpha: 0.1)),
-                const SizedBox(height: 8),
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('До оплати', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                    Text('50 ₴', style: TextStyle(color: AppColors.brandLight, fontWeight: FontWeight.w800, fontSize: 18)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            '1 сторінка = 1 ₴ • Поповнення в будь-який час',
-            style: TextStyle(color: Color(0x4DFFFFFF), fontSize: 11),
-            textAlign: TextAlign.center,
-          ),
-          if (error != null) ...[
             const SizedBox(height: 10),
-            Text(error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12), textAlign: TextAlign.center),
-          ],
-          const SizedBox(height: 16),
-          _PrimaryButton(
-            label: loading ? 'Завантаження...' : 'Оплатити через Monobank',
-            loading: loading,
-            onTap: loading ? () {} : onPay,
-          ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: onSkip,
-            child: const Text(
-              'Пропустити (пробний доступ на 30 днів)',
-              style: TextStyle(color: Color(0x60FFFFFF), fontSize: 12),
+
+            // Dots
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(widget.plans.length, (i) {
+                final active = i == _currentPlan;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: active ? 20 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: active ? AppColors.brand : Colors.white24,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 10),
+
+            // Hint
+            Text(
+              widget.plans[_currentPlan].hint,
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
               textAlign: TextAlign.center,
             ),
+          ],
+
+          if (widget.error != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              widget.error!,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+
+          if (!widget.plansLoading && widget.plans.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _PrimaryButton(
+              label: widget.paymentLoading
+                  ? 'Завантаження...'
+                  : widget.plans[_currentPlan].price == 0
+                      ? 'Спробувати безкоштовно'
+                      : 'Оплатити ${widget.plans[_currentPlan].price} ₴ через Monobank',
+              loading: widget.paymentLoading,
+              onTap: () => widget.onPay(widget.plans[_currentPlan]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCarouselCard extends StatelessWidget {
+  const _PlanCarouselCard({required this.plan, required this.selected});
+
+  final PlanItem plan;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final isFree = plan.price == 0;
+    final pagesLabel = plan.pages == null ? 'Необмежено' : '${plan.pages} сторінок';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.brand.withValues(alpha: 0.18)
+              : Colors.white.withValues(alpha: 0.04),
+          border: Border.all(
+            color: selected
+                ? AppColors.brand.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.08),
+            width: selected ? 1.5 : 1,
           ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  plan.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+                if (isFree)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4ADE80).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFF4ADE80).withValues(alpha: 0.4)),
+                    ),
+                    child: const Text(
+                      'БЕЗКОШТОВНО',
+                      style: TextStyle(
+                        color: Color(0xFF4ADE80),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(pagesLabel, style: const TextStyle(color: Colors.white54, fontSize: 13)),
+            const Spacer(),
+            Text(
+              isFree ? 'Безкоштовно' : '${plan.price} ₴',
+              style: TextStyle(
+                color: isFree ? const Color(0xFF4ADE80) : AppColors.brandLight,
+                fontWeight: FontWeight.w800,
+                fontSize: 22,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Payment success ───────────────────────────────────────────────────────
+
+class _PaymentSuccessCard extends StatelessWidget {
+  const _PaymentSuccessCard({required this.onGoToApp, super.key});
+
+  final VoidCallback onGoToApp;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 8),
+          const Icon(Icons.check_circle_rounded, color: Color(0xFF4ADE80), size: 56),
+          const SizedBox(height: 16),
+          const Text(
+            'Оплату отримано!',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Ваш рахунок поповнено.\nМожете користуватись сервісом.',
+            style: TextStyle(color: Color(0x80FFFFFF), fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _PrimaryButton(label: 'Перейти до додатку', onTap: onGoToApp),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -599,23 +839,23 @@ class _TextField extends StatelessWidget {
       style: const TextStyle(color: Colors.white, fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 13),
-        prefixIcon: icon != null ? Icon(icon, size: 18, color: Colors.white38) : null,
+        labelStyle: const TextStyle(color: Colors.white, fontSize: 15),
+        prefixIcon: icon != null ? Icon(icon, size: 18, color: Colors.white70) : null,
         suffixIcon: suffix,
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.07),
+        fillColor: Colors.white.withValues(alpha: 0.1),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.45), width: 1.5),
         ),
       ),
     );
@@ -623,7 +863,11 @@ class _TextField extends StatelessWidget {
 }
 
 class _PrimaryButton extends StatelessWidget {
-  const _PrimaryButton({required this.label, required this.onTap, this.loading = false});
+  const _PrimaryButton({
+    required this.label,
+    required this.onTap,
+    this.loading = false,
+  });
 
   final String label;
   final bool loading;

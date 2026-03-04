@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
 import 'package:rekognita_app/features/billing/data/billing_api_client.dart';
+import 'package:rekognita_app/features/billing/domain/entities/plan_item.dart';
 import 'package:rekognita_app/shared/widgets/rk_card.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -16,24 +17,33 @@ class BillingPage extends StatefulWidget {
 class _BillingPageState extends State<BillingPage> {
   final _api = BillingApiClient();
   Map<String, dynamic>? _sub;
+  List<PlanItem> _plans = [];
   bool _isLoading = true;
   String? _error;
-  String? _invoiceLoading; // plan name being paid right now
+  String? _invoiceLoading;
 
   @override
   void initState() {
     super.initState();
-    _loadSubscription();
+    _load();
   }
 
-  Future<void> _loadSubscription() async {
+  Future<void> _load() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
     try {
-      final sub = await _api.fetchSubscription(widget.accessToken);
-      if (mounted) setState(() => _sub = sub);
+      final results = await Future.wait([
+        _api.fetchSubscription(widget.accessToken),
+        _api.fetchPlans(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _sub = results[0] as Map<String, dynamic>;
+          _plans = results[1] as List<PlanItem>;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _error = 'Не вдалося завантажити підписку');
     } finally {
@@ -41,10 +51,10 @@ class _BillingPageState extends State<BillingPage> {
     }
   }
 
-  Future<void> _pay(String plan) async {
-    setState(() => _invoiceLoading = plan);
+  Future<void> _pay(String planId) async {
+    setState(() => _invoiceLoading = planId);
     try {
-      final invoice = await _api.createInvoice(plan, widget.accessToken);
+      final invoice = await _api.createInvoice(planId, widget.accessToken);
       final url = invoice['pageUrl'] as String?;
       if (url != null && mounted) {
         final uri = Uri.parse(url);
@@ -100,10 +110,7 @@ class _BillingPageState extends State<BillingPage> {
               children: [
                 Text(_error!, style: const TextStyle(color: AppColors.muted)),
                 const SizedBox(height: 12),
-                FilledButton(
-                  onPressed: _loadSubscription,
-                  child: const Text('Повторити'),
-                ),
+                FilledButton(onPressed: _load, child: const Text('Повторити')),
               ],
             ),
           )
@@ -111,6 +118,7 @@ class _BillingPageState extends State<BillingPage> {
           if (_sub != null) _CurrentPlanCard(sub: _sub!),
           const SizedBox(height: 24),
           _PlansGrid(
+            plans: _plans.where((p) => !p.isTrial).toList(),
             currentPlan: _sub?['plan'] as String? ?? 'free',
             invoiceLoading: _invoiceLoading,
             onPay: _pay,
@@ -120,6 +128,8 @@ class _BillingPageState extends State<BillingPage> {
     );
   }
 }
+
+// ── Current plan card ────────────────────────────────────────────────────────
 
 class _CurrentPlanCard extends StatelessWidget {
   const _CurrentPlanCard({required this.sub});
@@ -139,7 +149,8 @@ class _CurrentPlanCard extends StatelessWidget {
     if (renewsAt != null) {
       try {
         final dt = DateTime.parse(renewsAt).toLocal();
-        renewText = 'Наступна оплата: ${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+        renewText =
+            'Наступна оплата: ${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
       } catch (_) {}
     }
 
@@ -211,19 +222,14 @@ class _CurrentPlanCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 minHeight: 5,
                 value: (pagesUsed / pagesLimit).clamp(0.0, 1.0),
-                color: pagesUsed / pagesLimit > 0.85
-                    ? AppColors.warning
-                    : AppColors.brand,
+                color: pagesUsed / pagesLimit > 0.85 ? AppColors.warning : AppColors.brand,
                 backgroundColor: AppColors.border,
               ),
             ),
           ],
           if (renewText.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              renewText,
-              style: const TextStyle(fontSize: 12, color: AppColors.muted),
-            ),
+            Text(renewText, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           ],
         ],
       ),
@@ -237,74 +243,54 @@ class _CurrentPlanCard extends StatelessWidget {
       };
 }
 
+// ── Plans grid ───────────────────────────────────────────────────────────────
+
 class _PlansGrid extends StatelessWidget {
   const _PlansGrid({
+    required this.plans,
     required this.currentPlan,
     required this.invoiceLoading,
     required this.onPay,
   });
 
+  final List<PlanItem> plans;
   final String currentPlan;
   final String? invoiceLoading;
-  final void Function(String plan) onPay;
+  final void Function(String planId) onPay;
 
   @override
   Widget build(BuildContext context) {
+    if (plans.isEmpty) return const SizedBox.shrink();
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth > 680;
-        final cards = [
-          _PlanCard(
-            plan: 'cloud',
-            title: 'Cloud',
-            price: '499 ₴ / міс',
-            pages: '2 000 сторінок',
-            features: const [
-              'OCR розпізнавання',
-              'Інтеграція з 1С/БАС',
-              'До 20 співробітників',
-              'Підтримка e-mail',
-            ],
-            isCurrent: currentPlan == 'cloud',
-            isLoading: invoiceLoading == 'cloud',
-            onPay: () => onPay('cloud'),
-          ),
-          _PlanCard(
-            plan: 'enterprise',
-            title: 'Enterprise',
-            price: '1 999 ₴ / міс',
-            pages: 'Необмежено',
-            features: const [
-              'Все з Cloud',
-              'Необмежені сторінки',
-              'Необмежені співробітники',
-              'Пріоритетна підтримка',
-              'SLA 99.9%',
-            ],
-            isCurrent: currentPlan == 'enterprise',
-            isLoading: invoiceLoading == 'enterprise',
-            highlighted: true,
-            onPay: () => onPay('enterprise'),
-          ),
-        ];
+        final cards = plans
+            .map(
+              (p) => _PlanCard(
+                plan: p,
+                isCurrent: currentPlan == p.id,
+                isLoading: invoiceLoading == p.id,
+                onPay: () => onPay(p.id),
+              ),
+            )
+            .toList();
 
         if (wide) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: cards
-                .map((c) => Expanded(child: Padding(
-                      padding: const EdgeInsets.only(right: 16),
-                      child: c,
-                    )))
+                .map(
+                  (c) => Expanded(
+                    child: Padding(padding: const EdgeInsets.only(right: 16), child: c),
+                  ),
+                )
                 .toList(),
           );
         }
         return Column(
           children: cards
-              .map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: c,
-                  ))
+              .map((c) => Padding(padding: const EdgeInsets.only(bottom: 16), child: c))
               .toList(),
         );
       },
@@ -312,36 +298,31 @@ class _PlansGrid extends StatelessWidget {
   }
 }
 
+// ── Plan card ────────────────────────────────────────────────────────────────
+
 class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.plan,
-    required this.title,
-    required this.price,
-    required this.pages,
-    required this.features,
     required this.isCurrent,
     required this.isLoading,
     required this.onPay,
-    this.highlighted = false,
   });
 
-  final String plan;
-  final String title;
-  final String price;
-  final String pages;
-  final List<String> features;
+  final PlanItem plan;
   final bool isCurrent;
   final bool isLoading;
-  final bool highlighted;
   final VoidCallback onPay;
 
   @override
   Widget build(BuildContext context) {
+    final pagesLabel = plan.pages == null ? 'Необмежено' : '${_fmt(plan.pages!)} сторінок';
+    final priceLabel = '${_fmt(plan.price)} ₴ / міс';
+
     return RkCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (highlighted)
+          if (plan.recommended)
             Container(
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -359,7 +340,7 @@ class _PlanCard extends StatelessWidget {
               ),
             ),
           Text(
-            title,
+            plan.name,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -368,7 +349,7 @@ class _PlanCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            price,
+            priceLabel,
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -376,14 +357,11 @@ class _PlanCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            pages,
-            style: const TextStyle(fontSize: 12, color: AppColors.muted),
-          ),
+          Text(pagesLabel, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
           const SizedBox(height: 14),
           const Divider(color: AppColors.border),
           const SizedBox(height: 10),
-          ...features.map(
+          ...plan.features.map(
             (f) => Padding(
               padding: const EdgeInsets.only(bottom: 7),
               child: Row(
@@ -403,9 +381,7 @@ class _PlanCard extends StatelessWidget {
                     onPressed: null,
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.border),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: const Text('Поточний план'),
                   )
@@ -413,9 +389,7 @@ class _PlanCard extends StatelessWidget {
                     onPressed: isLoading ? null : onPay,
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.brand,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: isLoading
                         ? const SizedBox(
@@ -432,5 +406,12 @@ class _PlanCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _fmt(int n) {
+    if (n < 1000) return '$n';
+    final thousands = n ~/ 1000;
+    final remainder = n % 1000;
+    return remainder == 0 ? '$thousands 000' : '$thousands ${remainder.toString().padLeft(3, '0')}';
   }
 }
