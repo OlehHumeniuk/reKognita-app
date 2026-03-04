@@ -39,6 +39,48 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String?> createMonoInvoice(int amountUah) async {
+    if (_accessToken == null) return null;
+    try {
+      return await _apiClient.createMonoInvoice(
+        amountUah: amountUah,
+        token: _accessToken!,
+      );
+    } on AuthApiException catch (e) {
+      _error = e.message;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _error = 'Помилка створення рахунку';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<void> register({
+    required String email,
+    required String password,
+    required String fullName,
+    required String companyName,
+  }) async {
+    _setLoading();
+    try {
+      final AuthSession session = await _apiClient.register(
+        email: email,
+        password: password,
+        fullName: fullName,
+        companyName: companyName,
+      );
+      _setSession(session);
+    } on AuthApiException catch (e) {
+      _setError(e.message);
+    } catch (_) {
+      _setError('Не вдалося зареєструватись');
+    } finally {
+      _setIdle();
+    }
+  }
+
   Future<void> loginWithEmail({
     required String email,
     required String password,

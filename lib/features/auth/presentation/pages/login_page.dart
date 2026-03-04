@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
+import 'package:rekognita_app/features/auth/presentation/pages/register_page.dart';
 import 'package:rekognita_app/features/auth/presentation/providers/auth_controller.dart';
 import 'package:rekognita_app/features/auth/presentation/widgets/email_login_form.dart';
 import 'package:rekognita_app/features/auth/presentation/widgets/social_login_button.dart';
@@ -139,6 +140,23 @@ class LoginPage extends StatelessWidget {
                           style: TextStyle(
                             color: Color(0x40FFFFFF),
                             fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => RegisterPage(
+                                authController: authController,
+                              ),
+                            ),
+                          ),
+                          child: const Text(
+                            'Немає акаунту? Зареєструватись',
+                            style: TextStyle(
+                              color: Color(0x73FFFFFF),
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ],

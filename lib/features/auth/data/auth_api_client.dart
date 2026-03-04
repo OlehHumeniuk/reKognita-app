@@ -54,6 +54,55 @@ class AuthApiClient {
     return _parseAuthResponse(response, defaultMessage: 'Social login failed');
   }
 
+  Future<AuthSession> register({
+    required String email,
+    required String password,
+    required String fullName,
+    required String companyName,
+  }) async {
+    final uri = Uri.parse(
+      '${BackendConfig.baseUrl}${BackendConfig.apiPrefix}/auth/register',
+    );
+    final response = await _httpClient.post(
+      uri,
+      headers: const {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+        'full_name': fullName,
+        'company_name': companyName,
+      }),
+    );
+    return _parseAuthResponse(response, defaultMessage: 'Реєстрація не вдалась');
+  }
+
+  Future<String> createMonoInvoice({
+    required int amountUah,
+    required String token,
+  }) async {
+    final uri = Uri.parse(
+      '${BackendConfig.baseUrl}${BackendConfig.apiPrefix}/billing/invoice',
+    );
+    final response = await _httpClient.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'amount_uah': amountUah}),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      String message = 'Помилка створення рахунку';
+      try {
+        final map = jsonDecode(response.body) as Map<String, dynamic>;
+        message = map['detail']?.toString() ?? message;
+      } catch (_) {}
+      throw AuthApiException(message);
+    }
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    return payload['payment_url'] as String;
+  }
+
   Future<String> switchCompany(int companyId, String currentToken) async {
     final uri = Uri.parse(
       '${BackendConfig.baseUrl}${BackendConfig.apiPrefix}/auth/switch-company',
