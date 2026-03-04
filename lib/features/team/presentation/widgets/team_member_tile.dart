@@ -57,15 +57,18 @@ class TeamMemberTile extends StatelessWidget {
                       color: AppColors.muted,
                     ),
                   ),
+                  if (employee.docs.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: employee.docs
+                          .map((doc) => RkBadge(text: doc))
+                          .toList(growable: false),
+                    ),
+                  ],
                 ],
               ),
-            ),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: employee.docs
-                  .map((doc) => RkBadge(text: doc))
-                  .toList(growable: false),
             ),
             const SizedBox(width: 8),
             Icon(
