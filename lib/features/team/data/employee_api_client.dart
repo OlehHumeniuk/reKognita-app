@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:rekognita_app/core/config/backend_config.dart';
+import 'package:rekognita_app/features/dashboard/domain/entities/doc_record.dart';
 import 'package:rekognita_app/features/team/domain/entities/employee.dart';
 
 class EmployeeApiClient {
@@ -100,6 +101,20 @@ class EmployeeApiClient {
     final uri = Uri.parse('${BackendConfig.baseUrl}$_base/$id');
     final response = await _httpClient.delete(uri, headers: _headers(token));
     _assertOk(response, 204);
+  }
+
+  Future<List<DocRecord>> fetchDocRecords({
+    required String token,
+    required int employeeId,
+  }) async {
+    final uri =
+        Uri.parse('${BackendConfig.baseUrl}$_base/$employeeId/doc-records');
+    final response = await _httpClient.get(uri, headers: _headers(token));
+    _assertOk(response, 200);
+    final items = jsonDecode(response.body) as List<dynamic>;
+    return items
+        .map((e) => DocRecord.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   // ---------------------------------------------------------------------------

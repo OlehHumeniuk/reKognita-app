@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:rekognita_app/features/dashboard/domain/entities/doc_record.dart';
 import 'package:rekognita_app/features/team/data/employee_api_client.dart';
 import 'package:rekognita_app/features/team/domain/entities/employee.dart';
 
@@ -19,6 +20,8 @@ class TeamController extends ChangeNotifier {
   String _query = '';
   TeamStatus _status = TeamStatus.idle;
   String? _error;
+  final Map<int, List<DocRecord>> _employeeDocs = {};
+  bool _isLoadingDocs = false;
 
   List<Employee> get filteredEmployees {
     final input = _query.toLowerCase().trim();
@@ -32,7 +35,11 @@ class TeamController extends ChangeNotifier {
   String get query => _query;
   bool get isLoading => _status == TeamStatus.loading;
   bool get isSaving => _status == TeamStatus.saving;
+  bool get isLoadingDocs => _isLoadingDocs;
   String? get error => _error;
+
+  List<DocRecord> docsFor(int employeeId) =>
+      _employeeDocs[employeeId] ?? const [];
 
   Future<void> load() async {
     _status = TeamStatus.loading;
@@ -59,6 +66,21 @@ class TeamController extends ChangeNotifier {
 
   void select(Employee employee) {
     _selected = employee;
+    notifyListeners();
+    loadEmployeeDocs(employee.id);
+  }
+
+  Future<void> loadEmployeeDocs(int employeeId) async {
+    _isLoadingDocs = true;
+    notifyListeners();
+    try {
+      final docs = await _apiClient.fetchDocRecords(
+          token: _token, employeeId: employeeId);
+      _employeeDocs[employeeId] = docs;
+    } catch (_) {
+      _employeeDocs.putIfAbsent(employeeId, () => const []);
+    }
+    _isLoadingDocs = false;
     notifyListeners();
   }
 

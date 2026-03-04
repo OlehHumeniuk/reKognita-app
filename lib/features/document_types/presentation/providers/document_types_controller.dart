@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:rekognita_app/core/data/mock_data.dart';
 import 'package:rekognita_app/features/document_types/data/document_type_api_client.dart';
 import 'package:rekognita_app/features/document_types/domain/entities/document_type.dart';
 
@@ -15,7 +14,7 @@ class DocumentTypesController extends ChangeNotifier {
   final String _token;
   final DocumentTypeApiClient _apiClient;
 
-  List<DocumentType> _types = List.of(seedDocumentTypes);
+  List<DocumentType> _types = [];
   int? _activeDocumentTypeId;
   DocumentTypesStatus _status = DocumentTypesStatus.idle;
   String? _error;

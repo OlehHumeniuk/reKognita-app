@@ -44,13 +44,19 @@ class TemplatesApiClient {
   Future<ParsingTemplate> saveFields({
     required String token,
     required int id,
+    required String docType,
     required List<TemplateField> fields,
+    String? integration,
   }) async {
     final uri = Uri.parse('${BackendConfig.baseUrl}$_base/$id/fields');
     final response = await _httpClient.put(
       uri,
       headers: _headers(token),
-      body: jsonEncode({'fields': fields.map(_fieldToJson).toList()}),
+      body: jsonEncode({
+        'docType': docType,
+        'fields': fields.map(_fieldToJson).toList(),
+        'integration': integration,
+      }),
     );
     _assertOk(response, 200);
     return _fromJson(jsonDecode(response.body) as Map<String, dynamic>);
@@ -83,6 +89,7 @@ class TemplatesApiClient {
     return ParsingTemplate(
       id: json['id'] as int,
       docType: json['docType'] as String,
+      integration: json['integration'] as String?,
       fields: fieldsList,
     );
   }

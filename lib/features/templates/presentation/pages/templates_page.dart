@@ -54,8 +54,10 @@ class _TemplatesPageState extends State<TemplatesPage> {
     }
   }
 
-  Future<void> _onSave(int id, List<TemplateField> fields) async {
-    await _controller.saveFields(id, fields);
+  Future<void> _onSave(
+      int id, String docType, List<TemplateField> fields, String? integration) async {
+    await _controller.saveAll(
+        id: id, docType: docType, fields: fields, integration: integration);
   }
 
   @override
@@ -184,7 +186,8 @@ class _TemplatesPageState extends State<TemplatesPage> {
                           child: TemplateEditor(
                             template: current,
                             isSaving: _controller.isSaving,
-                            onSave: (fields) => _onSave(current.id, fields),
+                            onSave: (docType, fields, integration) =>
+                                _onSave(current.id, docType, fields, integration),
                           ),
                         ),
                       ],
@@ -199,7 +202,8 @@ class _TemplatesPageState extends State<TemplatesPage> {
                       TemplateEditor(
                         template: current,
                         isSaving: _controller.isSaving,
-                        onSave: (fields) => _onSave(current.id, fields),
+                        onSave: (docType, fields, integration) =>
+                                _onSave(current.id, docType, fields, integration),
                       ),
                     ],
                   ],

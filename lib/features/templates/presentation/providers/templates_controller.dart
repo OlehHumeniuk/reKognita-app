@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:rekognita_app/core/data/mock_data.dart';
 import 'package:rekognita_app/features/templates/data/templates_api_client.dart';
 import 'package:rekognita_app/features/templates/domain/entities/parsing_template.dart';
 import 'package:rekognita_app/features/templates/domain/entities/template_field.dart';
@@ -16,7 +15,7 @@ class TemplatesController extends ChangeNotifier {
   final String _token;
   final TemplatesApiClient _apiClient;
 
-  List<ParsingTemplate> _templates = List.of(seedTemplates);
+  List<ParsingTemplate> _templates = [];
   int? _activeIndex;
   TemplatesStatus _status = TemplatesStatus.idle;
   String? _error;
@@ -65,14 +64,24 @@ class TemplatesController extends ChangeNotifier {
     }
   }
 
-  Future<void> saveFields(int id, List<TemplateField> fields) async {
+  Future<void> saveAll({
+    required int id,
+    required String docType,
+    required List<TemplateField> fields,
+    String? integration,
+  }) async {
     _status = TemplatesStatus.saving;
     _error = null;
     notifyListeners();
 
     try {
-      final updated =
-          await _apiClient.saveFields(token: _token, id: id, fields: fields);
+      final updated = await _apiClient.saveFields(
+        token: _token,
+        id: id,
+        docType: docType,
+        fields: fields,
+        integration: integration,
+      );
       _templates = [
         for (final t in _templates)
           if (t.id == id) updated else t,

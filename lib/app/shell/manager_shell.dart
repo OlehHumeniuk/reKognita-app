@@ -8,7 +8,6 @@ import 'package:rekognita_app/features/document_types/presentation/pages/documen
 import 'package:rekognita_app/features/billing/presentation/pages/billing_page.dart';
 import 'package:rekognita_app/features/integrations/presentation/pages/integrations_page.dart';
 import 'package:rekognita_app/features/team/presentation/pages/team_page.dart';
-import 'package:rekognita_app/features/templates/presentation/pages/templates_page.dart';
 import 'package:rekognita_app/features/company_context/domain/entities/company.dart';
 
 class ManagerShell extends StatelessWidget {
@@ -320,12 +319,9 @@ class _MainContent extends StatelessWidget {
           onNavigateToBilling: () => onSectionChanged(AppSection.billing),
         ),
       AppSection.team => TeamPage(accessToken: accessToken),
-      AppSection.documentTypes => DocumentTypesPage(
-          accessToken: accessToken,
-          onNavigateToSection: onSectionChanged,
-        ),
-      AppSection.templates => TemplatesPage(accessToken: accessToken),
-      AppSection.integrations => const IntegrationsPage(),
+      AppSection.documentTypes =>
+        DocumentTypesPage(accessToken: accessToken),
+      AppSection.integrations => IntegrationsPage(accessToken: accessToken),
       AppSection.billing => BillingPage(accessToken: accessToken),
     };
 

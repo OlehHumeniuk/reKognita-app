@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
+import 'package:rekognita_app/features/integrations/domain/entities/integration.dart';
 import 'package:rekognita_app/features/templates/domain/entities/parsing_template.dart';
 import 'package:rekognita_app/features/templates/domain/entities/template_field.dart';
 import 'package:rekognita_app/shared/widgets/rk_card.dart';
@@ -13,12 +14,15 @@ class TemplateEditor extends StatefulWidget {
     required this.template,
     this.isSaving = false,
     this.onSave,
+    this.integrations = const [],
     super.key,
   });
 
   final ParsingTemplate template;
   final bool isSaving;
-  final void Function(List<TemplateField> fields)? onSave;
+  final void Function(
+      String docType, List<TemplateField> fields, String? integration)? onSave;
+  final List<Integration> integrations;
 
   @override
   State<TemplateEditor> createState() => _TemplateEditorState();
@@ -26,19 +30,33 @@ class TemplateEditor extends StatefulWidget {
 
 class _TemplateEditorState extends State<TemplateEditor> {
   late List<TemplateField> _fields;
+  String? _selectedIntegration;
+  late TextEditingController _nameCtrl;
 
   @override
   void initState() {
     super.initState();
     _fields = List.of(widget.template.fields);
+    _selectedIntegration = widget.template.integration;
+    _nameCtrl = TextEditingController(text: widget.template.docType);
   }
 
   @override
   void didUpdateWidget(TemplateEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.template.id != widget.template.id) {
-      setState(() => _fields = List.of(widget.template.fields));
+      setState(() {
+        _fields = List.of(widget.template.fields);
+        _selectedIntegration = widget.template.integration;
+        _nameCtrl.text = widget.template.docType;
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
   }
 
   void _removeField(int index) => setState(() => _fields.removeAt(index));
@@ -95,19 +113,31 @@ class _TemplateEditorState extends State<TemplateEditor> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  widget.template.docType,
+                child: TextField(
+                  controller: _nameCtrl,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppColors.dark,
                   ),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
               FilledButton(
                 onPressed: widget.isSaving
                     ? null
-                    : () => widget.onSave?.call(_fields),
+                    : () => widget.onSave?.call(
+                          _nameCtrl.text.trim().isEmpty
+                              ? widget.template.docType
+                              : _nameCtrl.text.trim(),
+                          _fields,
+                          _selectedIntegration,
+                        ),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brand,
                 ),
@@ -124,6 +154,75 @@ class _TemplateEditorState extends State<TemplateEditor> {
               ),
             ],
           ),
+          if (widget.integrations.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text(
+                  'ІНТЕГРАЦІЯ',
+                  style: TextStyle(
+                    fontSize: 11,
+                    letterSpacing: 0.8,
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.bg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: DropdownButton<String?>(
+                      value: _selectedIntegration,
+                      isExpanded: true,
+                      underline: const SizedBox.shrink(),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.dark,
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Center(
+                            child: Text(
+                              'Не вибрано',
+                              style: TextStyle(
+                                  color: AppColors.muted,
+                                  fontWeight: FontWeight.w400),
+                            ),
+                          ),
+                        ),
+                        ...widget.integrations.map(
+                          (i) => DropdownMenuItem<String?>(
+                            value: i.name,
+                            child: Row(
+                              children: [
+                                Text(i.icon,
+                                    style: const TextStyle(fontSize: 14)),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(i.name,
+                                      overflow: TextOverflow.ellipsis),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) =>
+                          setState(() => _selectedIntegration = v),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 18),
           const Text(
             'ПОЛЯ ДЛЯ ЕКСТРАКЦІЇ',
