@@ -9,9 +9,16 @@ import 'package:rekognita_app/shared/widgets/rk_card.dart';
 // ---------------------------------------------------------------------------
 
 class TemplateEditor extends StatefulWidget {
-  const TemplateEditor({required this.template, super.key});
+  const TemplateEditor({
+    required this.template,
+    this.isSaving = false,
+    this.onSave,
+    super.key,
+  });
 
   final ParsingTemplate template;
+  final bool isSaving;
+  final void Function(List<TemplateField> fields)? onSave;
 
   @override
   State<TemplateEditor> createState() => _TemplateEditorState();
@@ -98,11 +105,22 @@ class _TemplateEditorState extends State<TemplateEditor> {
                 ),
               ),
               FilledButton(
-                onPressed: () {},
+                onPressed: widget.isSaving
+                    ? null
+                    : () => widget.onSave?.call(_fields),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brand,
                 ),
-                child: const Text('Зберегти'),
+                child: widget.isSaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Зберегти'),
               ),
             ],
           ),

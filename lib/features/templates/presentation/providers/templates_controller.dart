@@ -1,23 +1,90 @@
 import 'package:flutter/foundation.dart';
 import 'package:rekognita_app/core/data/mock_data.dart';
+import 'package:rekognita_app/features/templates/data/templates_api_client.dart';
 import 'package:rekognita_app/features/templates/domain/entities/parsing_template.dart';
+import 'package:rekognita_app/features/templates/domain/entities/template_field.dart';
+
+enum TemplatesStatus { idle, loading, saving, error }
 
 class TemplatesController extends ChangeNotifier {
-  final List<ParsingTemplate> _templates = List.of(seedTemplates);
+  TemplatesController({
+    required String accessToken,
+    TemplatesApiClient? apiClient,
+  })  : _token = accessToken,
+        _apiClient = apiClient ?? TemplatesApiClient();
+
+  final String _token;
+  final TemplatesApiClient _apiClient;
+
+  List<ParsingTemplate> _templates = List.of(seedTemplates);
   int? _activeIndex;
+  TemplatesStatus _status = TemplatesStatus.idle;
+  String? _error;
 
   List<ParsingTemplate> get templates => List.unmodifiable(_templates);
   int? get activeIndex => _activeIndex;
+  bool get isLoading => _status == TemplatesStatus.loading;
+  bool get isSaving => _status == TemplatesStatus.saving;
+  String? get error => _error;
+
+  Future<void> load() async {
+    _status = TemplatesStatus.loading;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _templates = await _apiClient.fetchAll(token: _token);
+      _status = TemplatesStatus.idle;
+    } on TemplatesApiException catch (e) {
+      _status = TemplatesStatus.error;
+      _error = e.message;
+    } catch (_) {
+      _status = TemplatesStatus.error;
+      _error = 'Не вдалося завантажити шаблони';
+    }
+    notifyListeners();
+  }
 
   void select(int index) {
     _activeIndex = _activeIndex == index ? null : index;
     notifyListeners();
   }
 
-  void createTemplate(String docType) {
-    final newId = _templates.isEmpty ? 1 : _templates.last.id + 1;
-    _templates.add(ParsingTemplate(id: newId, docType: docType, fields: []));
-    _activeIndex = _templates.length - 1;
+  Future<void> createTemplate(String docType) async {
+    try {
+      final created = await _apiClient.create(token: _token, docType: docType);
+      _templates = [..._templates, created];
+      _activeIndex = _templates.length - 1;
+      notifyListeners();
+    } on TemplatesApiException catch (e) {
+      _error = e.message;
+      notifyListeners();
+    } catch (_) {
+      _error = 'Не вдалося створити шаблон';
+      notifyListeners();
+    }
+  }
+
+  Future<void> saveFields(int id, List<TemplateField> fields) async {
+    _status = TemplatesStatus.saving;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final updated =
+          await _apiClient.saveFields(token: _token, id: id, fields: fields);
+      _templates = [
+        for (final t in _templates)
+          if (t.id == id) updated else t,
+      ];
+      _status = TemplatesStatus.idle;
+    } on TemplatesApiException catch (e) {
+      _status = TemplatesStatus.error;
+      _error = e.message;
+    } catch (_) {
+      _status = TemplatesStatus.error;
+      _error = 'Не вдалося зберегти шаблон';
+    }
     notifyListeners();
   }
 }

@@ -319,7 +319,7 @@ class _MainContent extends StatelessWidget {
           accessToken: accessToken,
           onNavigateToSection: onSectionChanged,
         ),
-      AppSection.templates => const TemplatesPage(),
+      AppSection.templates => TemplatesPage(accessToken: accessToken),
       AppSection.integrations => const IntegrationsPage(),
     };
 

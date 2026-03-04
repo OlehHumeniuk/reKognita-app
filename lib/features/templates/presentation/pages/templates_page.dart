@@ -1,13 +1,19 @@
 import 'package:core_ui/core_ui.dart' hide AppColors;
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
+import 'package:rekognita_app/features/templates/domain/entities/template_field.dart';
 import 'package:rekognita_app/features/templates/presentation/providers/templates_controller.dart';
 import 'package:rekognita_app/features/templates/presentation/widgets/template_editor.dart';
 import 'package:rekognita_app/features/templates/presentation/widgets/template_selector_item.dart';
 import 'package:rekognita_app/shared/widgets/section_header.dart';
 
 class TemplatesPage extends StatefulWidget {
-  const TemplatesPage({super.key});
+  const TemplatesPage({
+    required this.accessToken,
+    super.key,
+  });
+
+  final String accessToken;
 
   @override
   State<TemplatesPage> createState() => _TemplatesPageState();
@@ -19,7 +25,8 @@ class _TemplatesPageState extends State<TemplatesPage> {
   @override
   void initState() {
     super.initState();
-    _controller = TemplatesController();
+    _controller = TemplatesController(accessToken: widget.accessToken);
+    _controller.load();
   }
 
   @override
@@ -47,14 +54,56 @@ class _TemplatesPageState extends State<TemplatesPage> {
     }
   }
 
+  Future<void> _onSave(int id, List<TemplateField> fields) async {
+    await _controller.saveFields(id, fields);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
+        if (_controller.isLoading) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 64),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        if (_controller.error != null && _controller.templates.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 64),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.cloud_off_rounded,
+                      size: 40, color: AppColors.muted),
+                  const SizedBox(height: 12),
+                  Text(
+                    _controller.error!,
+                    style: const TextStyle(color: AppColors.muted),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: _controller.load,
+                    style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brand),
+                    child: const Text('Повторити'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final templates = _controller.templates;
         final activeIndex = _controller.activeIndex;
         final current = activeIndex != null ? templates[activeIndex] : null;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -84,7 +133,8 @@ class _TemplatesPageState extends State<TemplatesPage> {
                                 TemplateSelectorItem(
                                   template: entry.value,
                                   active: entry.key == activeIndex,
-                                  onTap: () => _controller.select(entry.key),
+                                  onTap: () =>
+                                      _controller.select(entry.key),
                                 ),
                                 if (!isLast)
                                   const Divider(
@@ -130,7 +180,13 @@ class _TemplatesPageState extends State<TemplatesPage> {
                       SizedBox(width: 240, child: selector),
                       if (current != null) ...[
                         const SizedBox(width: 16),
-                        Expanded(child: TemplateEditor(template: current)),
+                        Expanded(
+                          child: TemplateEditor(
+                            template: current,
+                            isSaving: _controller.isSaving,
+                            onSave: (fields) => _onSave(current.id, fields),
+                          ),
+                        ),
                       ],
                     ],
                   );
@@ -140,7 +196,11 @@ class _TemplatesPageState extends State<TemplatesPage> {
                     selector,
                     if (current != null) ...[
                       const SizedBox(height: 12),
-                      TemplateEditor(template: current),
+                      TemplateEditor(
+                        template: current,
+                        isSaving: _controller.isSaving,
+                        onSave: (fields) => _onSave(current.id, fields),
+                      ),
                     ],
                   ],
                 );
