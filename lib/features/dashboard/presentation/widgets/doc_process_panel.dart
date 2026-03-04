@@ -14,8 +14,10 @@ class DocProcessPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pending = records.where((r) => r.status == DocRecordStatus.pending).length;
-    final synced = records.where((r) => r.status == DocRecordStatus.synced).length;
+    final counts = {
+      for (final s in DocRecordStatus.values)
+        s: records.where((r) => r.status == s).length,
+    };
     final preview = records.take(_previewCount).toList();
 
     return RkCard(
@@ -23,7 +25,7 @@ class DocProcessPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header: title + stat pills + "Усі записи"
+          // ── Row 1: title + "Усі записи"
           Row(
             children: [
               const Expanded(
@@ -36,18 +38,6 @@ class DocProcessPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              _StatPill(
-                label: 'Обробляється',
-                count: pending,
-                color: DocRecordStatus.pending.color,
-              ),
-              const SizedBox(width: 6),
-              _StatPill(
-                label: 'Синхронізовано',
-                count: synced,
-                color: DocRecordStatus.synced.color,
-              ),
-              if (pending > 0 || synced > 0) const SizedBox(width: 10),
               GestureDetector(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -70,6 +60,18 @@ class DocProcessPanel extends StatelessWidget {
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // ── Row 2: status pills
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final s in DocRecordStatus.values)
+                if ((counts[s] ?? 0) > 0)
+                  _StatPill(label: s.label, count: counts[s]!, color: s.color),
             ],
           ),
           const SizedBox(height: 10),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/features/company_context/domain/entities/company.dart';
 import 'package:rekognita_app/features/dashboard/presentation/providers/dashboard_controller.dart';
-import 'package:rekognita_app/features/dashboard/presentation/widgets/activity_panel.dart';
 import 'package:rekognita_app/features/dashboard/presentation/widgets/distribution_panel.dart';
 import 'package:rekognita_app/features/dashboard/presentation/widgets/doc_process_panel.dart';
 import 'package:rekognita_app/features/dashboard/presentation/widgets/stat_card.dart';
@@ -123,34 +122,8 @@ class _DashboardPageState extends State<DashboardPage> {
               DocProcessPanel(records: _controller.docRecords),
             const SizedBox(height: 20),
 
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final wide = constraints.maxWidth > 980;
-                if (wide) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: ActivityPanel(items: _controller.activity),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 2,
-                        child: DistributionPanel(items: _controller.distribution),
-                      ),
-                    ],
-                  );
-                }
-                return Column(
-                  children: [
-                    ActivityPanel(items: _controller.activity),
-                    const SizedBox(height: 16),
-                    DistributionPanel(items: _controller.distribution),
-                  ],
-                );
-              },
-            ),
+            if (_controller.distribution.isNotEmpty)
+              DistributionPanel(items: _controller.distribution),
           ],
         );
       },
