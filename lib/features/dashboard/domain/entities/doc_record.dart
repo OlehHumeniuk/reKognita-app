@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+const _docTypeColors = <String, Color>{
+  'Накладні': Color(0xFF93C5FD),
+  'Рахунки': Color(0xFFFBBF24),
+  'Договори': Color(0xFF64748B),
+  'Медичні довідки': Color(0xFF10B981),
+  'Акти': Color(0xFF2563EB),
+};
+
 enum DocRecordStatus { pending, processed, synced, error }
 
 extension DocRecordStatusExt on DocRecordStatus {
@@ -51,6 +59,31 @@ class DocRecord {
   final String? externalId;
   final Map<String, String> extractedFields;
   final String integrationSystem;
+
+  factory DocRecord.fromJson(Map<String, dynamic> json) {
+    final docType = json['docType'] as String? ?? '';
+    final statusStr = json['status'] as String? ?? 'processed';
+    final status = switch (statusStr) {
+      'pending' => DocRecordStatus.pending,
+      'synced' => DocRecordStatus.synced,
+      'error' => DocRecordStatus.error,
+      _ => DocRecordStatus.processed,
+    };
+    final rawFields = json['extractedFields'] as Map<String, dynamic>? ?? {};
+    return DocRecord(
+      id: (json['id'] as int).toString(),
+      docNumber: json['docNumber'] as String? ?? '',
+      docType: docType,
+      typeIcon: json['typeIcon'] as String? ?? '📄',
+      typeColor: _docTypeColors[docType] ?? const Color(0xFF2563EB),
+      uploadedBy: json['employeeName'] as String? ?? '',
+      uploadedAt: DateTime.parse(json['createdAt'] as String),
+      status: status,
+      externalId: json['externalId'] as String?,
+      integrationSystem: json['integrationSystem'] as String? ?? '—',
+      extractedFields: rawFields.map((k, v) => MapEntry(k, v.toString())),
+    );
+  }
 
   String get timeAgo {
     final diff = DateTime.now().difference(uploadedAt);

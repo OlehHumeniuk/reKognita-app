@@ -5,6 +5,7 @@ import 'package:rekognita_app/features/auth/domain/entities/auth_user.dart';
 import 'package:rekognita_app/features/company_context/presentation/widgets/company_switcher.dart';
 import 'package:rekognita_app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:rekognita_app/features/document_types/presentation/pages/document_types_page.dart';
+import 'package:rekognita_app/features/billing/presentation/pages/billing_page.dart';
 import 'package:rekognita_app/features/integrations/presentation/pages/integrations_page.dart';
 import 'package:rekognita_app/features/team/presentation/pages/team_page.dart';
 import 'package:rekognita_app/features/templates/presentation/pages/templates_page.dart';
@@ -313,7 +314,11 @@ class _MainContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = switch (section) {
-      AppSection.dashboard => DashboardPage(company: company),
+      AppSection.dashboard => DashboardPage(
+          accessToken: accessToken,
+          company: company,
+          onNavigateToBilling: () => onSectionChanged(AppSection.billing),
+        ),
       AppSection.team => TeamPage(accessToken: accessToken),
       AppSection.documentTypes => DocumentTypesPage(
           accessToken: accessToken,
@@ -321,6 +326,7 @@ class _MainContent extends StatelessWidget {
         ),
       AppSection.templates => TemplatesPage(accessToken: accessToken),
       AppSection.integrations => const IntegrationsPage(),
+      AppSection.billing => BillingPage(accessToken: accessToken),
     };
 
     return Container(

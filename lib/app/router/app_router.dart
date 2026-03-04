@@ -9,7 +9,8 @@ enum AppSection {
     Icons.description_rounded,
   ),
   templates('/app/templates', 'Шаблони', Icons.dataset_rounded),
-  integrations('/app/integrations', 'Інтеграції', Icons.hub_rounded);
+  integrations('/app/integrations', 'Інтеграції', Icons.hub_rounded),
+  billing('/app/billing', 'Підписка', Icons.credit_card_rounded);
 
   const AppSection(this.path, this.label, this.icon);
 

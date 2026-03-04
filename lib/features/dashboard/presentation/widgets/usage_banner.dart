@@ -3,9 +3,10 @@ import 'package:rekognita_app/core/constants/app_colors.dart';
 import 'package:rekognita_app/features/company_context/domain/entities/company.dart';
 
 class UsageBanner extends StatelessWidget {
-  const UsageBanner({required this.company, super.key});
+  const UsageBanner({required this.company, this.onUpgrade, super.key});
 
   final Company company;
+  final VoidCallback? onUpgrade;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +81,7 @@ class UsageBanner extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           FilledButton(
-            onPressed: () {},
+            onPressed: onUpgrade,
             style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
             child: const Text('Поповнити'),
           ),

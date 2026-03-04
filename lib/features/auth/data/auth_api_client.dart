@@ -54,6 +54,25 @@ class AuthApiClient {
     return _parseAuthResponse(response, defaultMessage: 'Social login failed');
   }
 
+  Future<String> switchCompany(int companyId, String currentToken) async {
+    final uri = Uri.parse(
+      '${BackendConfig.baseUrl}${BackendConfig.apiPrefix}/auth/switch-company',
+    );
+    final response = await _httpClient.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $currentToken',
+      },
+      body: jsonEncode({'company_id': companyId}),
+    );
+    if (response.statusCode != 200) {
+      throw AuthApiException('Failed to switch company');
+    }
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    return payload['access_token'] as String;
+  }
+
   AuthSession _parseAuthResponse(
     http.Response response, {
     required String defaultMessage,

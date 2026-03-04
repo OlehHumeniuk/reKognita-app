@@ -128,6 +128,17 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> switchCompany(int companyId) async {
+    if (_accessToken == null) return;
+    try {
+      final newToken = await _apiClient.switchCompany(companyId, _accessToken!);
+      _accessToken = newToken;
+      notifyListeners();
+    } catch (_) {
+      // Swallow — company switch failure is non-critical, user stays on current
+    }
+  }
+
   void logout() {
     _currentUser = null;
     _accessToken = null;
