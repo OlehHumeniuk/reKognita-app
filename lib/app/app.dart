@@ -49,6 +49,7 @@ class _RekognitaAppState extends State<RekognitaApp> {
                   currentCompany: _companyController.currentCompany,
                   companies: _companyController.companies,
                   currentUser: _authController.currentUser!,
+                  accessToken: _authController.accessToken ?? '',
                   onSectionChanged: (section) {
                     setState(() => _activeSection = section);
                   },

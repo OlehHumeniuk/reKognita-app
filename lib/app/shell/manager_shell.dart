@@ -16,6 +16,7 @@ class ManagerShell extends StatelessWidget {
     required this.currentCompany,
     required this.companies,
     required this.currentUser,
+    required this.accessToken,
     required this.onSectionChanged,
     required this.onCompanyChanged,
     required this.onLogout,
@@ -26,6 +27,7 @@ class ManagerShell extends StatelessWidget {
   final Company currentCompany;
   final List<Company> companies;
   final AuthUser currentUser;
+  final String accessToken;
   final ValueChanged<AppSection> onSectionChanged;
   final ValueChanged<Company> onCompanyChanged;
   final VoidCallback onLogout;
@@ -38,6 +40,8 @@ class ManagerShell extends StatelessWidget {
         final content = _MainContent(
           section: activeSection,
           company: currentCompany,
+          accessToken: accessToken,
+          onSectionChanged: onSectionChanged,
         );
 
         if (isDesktop) {
@@ -294,17 +298,27 @@ class _Brand extends StatelessWidget {
 }
 
 class _MainContent extends StatelessWidget {
-  const _MainContent({required this.section, required this.company});
+  const _MainContent({
+    required this.section,
+    required this.company,
+    required this.accessToken,
+    required this.onSectionChanged,
+  });
 
   final AppSection section;
   final Company company;
+  final String accessToken;
+  final ValueChanged<AppSection> onSectionChanged;
 
   @override
   Widget build(BuildContext context) {
     final child = switch (section) {
       AppSection.dashboard => DashboardPage(company: company),
       AppSection.team => const TeamPage(),
-      AppSection.documentTypes => const DocumentTypesPage(),
+      AppSection.documentTypes => DocumentTypesPage(
+          accessToken: accessToken,
+          onNavigateToSection: onSectionChanged,
+        ),
       AppSection.templates => const TemplatesPage(),
       AppSection.integrations => const IntegrationsPage(),
     };
