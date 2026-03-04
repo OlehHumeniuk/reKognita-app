@@ -314,7 +314,7 @@ class _MainContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final child = switch (section) {
       AppSection.dashboard => DashboardPage(company: company),
-      AppSection.team => const TeamPage(),
+      AppSection.team => TeamPage(accessToken: accessToken),
       AppSection.documentTypes => DocumentTypesPage(
           accessToken: accessToken,
           onNavigateToSection: onSectionChanged,

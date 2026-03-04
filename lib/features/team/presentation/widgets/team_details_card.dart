@@ -5,9 +5,22 @@ import 'package:rekognita_app/shared/widgets/initials_avatar.dart';
 import 'package:rekognita_app/shared/widgets/rk_card.dart';
 
 class TeamDetailsCard extends StatelessWidget {
-  const TeamDetailsCard({required this.employee, super.key});
+  const TeamDetailsCard({
+    required this.employee,
+    this.isSaving = false,
+    this.onEdit,
+    this.onToggleStatus,
+    this.onAddDoc,
+    this.onRemoveDoc,
+    super.key,
+  });
 
   final Employee? employee;
+  final bool isSaving;
+  final VoidCallback? onEdit;
+  final VoidCallback? onToggleStatus;
+  final VoidCallback? onAddDoc;
+  final void Function(String docType)? onRemoveDoc;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +53,8 @@ class TeamDetailsCard extends StatelessWidget {
       );
     }
 
+    final isActive = employee!.isActive;
+
     return RkCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,24 +63,66 @@ class TeamDetailsCard extends StatelessWidget {
             children: [
               InitialsAvatar(name: employee!.name, size: 56, radius: 16),
               const Spacer(),
-              _ActionChip(text: 'Редагувати'),
-              const SizedBox(width: 8),
-              const _ActionChip(text: 'Заблокувати', isDanger: true),
+              if (isSaving)
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else ...[
+                _ActionChip(
+                  text: 'Редагувати',
+                  onTap: onEdit,
+                ),
+                const SizedBox(width: 8),
+                _ActionChip(
+                  text: isActive ? 'Заблокувати' : 'Розблокувати',
+                  isDanger: isActive,
+                  onTap: onToggleStatus,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            employee!.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppColors.dark,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '${employee!.role} • ${employee!.dept}',
-            style: const TextStyle(fontSize: 13, color: AppColors.muted),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      employee!.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.dark,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${employee!.role} • ${employee!.dept}',
+                      style: const TextStyle(fontSize: 13, color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isActive)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Заблокований',
+                    style: TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 16),
           const Divider(color: AppColors.border),
@@ -103,7 +160,7 @@ class TeamDetailsCard extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
+                    onPressed: isSaving ? null : () => onRemoveDoc?.call(doc),
                     icon: const Icon(Icons.close_rounded, size: 17),
                   ),
                 ],
@@ -120,7 +177,7 @@ class TeamDetailsCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            onPressed: () {},
+            onPressed: isSaving ? null : onAddDoc,
             child: const Text('+ Додати тип документа'),
           ),
         ],
@@ -130,25 +187,33 @@ class TeamDetailsCard extends StatelessWidget {
 }
 
 class _ActionChip extends StatelessWidget {
-  const _ActionChip({required this.text, this.isDanger = false});
+  const _ActionChip({
+    required this.text,
+    this.isDanger = false,
+    this.onTap,
+  });
 
   final String text;
   final bool isDanger;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDanger ? const Color(0xFFFEE2E2) : AppColors.bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: isDanger ? AppColors.danger : AppColors.muted,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDanger ? const Color(0xFFFEE2E2) : AppColors.bg,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isDanger ? AppColors.danger : AppColors.muted,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
