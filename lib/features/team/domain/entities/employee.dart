@@ -6,6 +6,7 @@ class Employee {
     required this.dept,
     required this.isActive,
     required this.docs,
+    this.inviteCode,
   });
 
   final int id;
@@ -14,4 +15,5 @@ class Employee {
   final String dept;
   final bool isActive;
   final List<String> docs;
+  final String? inviteCode;
 }

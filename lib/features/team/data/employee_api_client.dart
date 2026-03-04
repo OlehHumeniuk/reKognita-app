@@ -138,6 +138,7 @@ class EmployeeApiClient {
       dept: json['dept'] as String,
       isActive: json['isActive'] as bool,
       docs: (json['docs'] as List<dynamic>).map((e) => e as String).toList(),
+      inviteCode: json['inviteCode'] as String?,
     );
   }
 }

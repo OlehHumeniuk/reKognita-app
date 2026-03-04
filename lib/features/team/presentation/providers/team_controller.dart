@@ -65,6 +65,11 @@ class TeamController extends ChangeNotifier {
   }
 
   void select(Employee employee) {
+    if (_selected?.id == employee.id) {
+      _selected = null;
+      notifyListeners();
+      return;
+    }
     _selected = employee;
     notifyListeners();
     loadEmployeeDocs(employee.id);
