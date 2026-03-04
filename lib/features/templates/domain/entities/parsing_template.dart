@@ -1,3 +1,5 @@
+import 'package:rekognita_app/features/templates/domain/entities/template_field.dart';
+
 class ParsingTemplate {
   const ParsingTemplate({
     required this.id,
@@ -7,5 +9,5 @@ class ParsingTemplate {
 
   final int id;
   final String docType;
-  final List<String> fields;
+  final List<TemplateField> fields;
 }

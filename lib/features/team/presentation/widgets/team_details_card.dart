@@ -113,6 +113,7 @@ class TeamDetailsCard extends StatelessWidget {
           const SizedBox(height: 8),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 44),
               side: const BorderSide(color: AppColors.border, width: 1.5),
               padding: const EdgeInsets.symmetric(vertical: 11),
               shape: RoundedRectangleBorder(

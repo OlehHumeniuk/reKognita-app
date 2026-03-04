@@ -27,6 +27,14 @@ class _DocumentTypesPageState extends State<DocumentTypesPage> {
     super.dispose();
   }
 
+  void _showEditDialog(int id) {
+    // TODO: open edit dialog for document type
+  }
+
+  void _showTemplateForType(int id) {
+    // TODO: navigate to templates tab filtered by this type
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -55,22 +63,41 @@ class _DocumentTypesPageState extends State<DocumentTypesPage> {
                     crossAxisCount: cols,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    mainAxisExtent: 230,
+                    mainAxisExtent: 200,
                   ),
                   itemBuilder: (context, index) {
                     if (index == seedDocumentTypes.length) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border, width: 2),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            '+ Додати тип',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.muted,
-                              fontWeight: FontWeight.w600,
+                      return InkWell(
+                        onTap: () {},
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.brand.withValues(alpha: 0.3),
+                              width: 2,
+                              strokeAlign: BorderSide.strokeAlignInside,
+                            ),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.add_rounded,
+                                  size: 28,
+                                  color: AppColors.brand.withValues(alpha: 0.5),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Додати тип',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.brand.withValues(alpha: 0.7),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -82,6 +109,8 @@ class _DocumentTypesPageState extends State<DocumentTypesPage> {
                       documentType: doc,
                       active: _controller.activeDocumentTypeId == doc.id,
                       onTap: () => _controller.toggleSelection(doc.id),
+                      onEdit: () => _showEditDialog(doc.id),
+                      onTemplate: () => _showTemplateForType(doc.id),
                     );
                   },
                 );

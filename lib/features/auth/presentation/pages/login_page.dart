@@ -13,7 +13,8 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = math.min(420.0, MediaQuery.sizeOf(context).width - 24);
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final width = math.max(0.0, math.min(420.0, viewportWidth - 24));
     return AnimatedBuilder(
       animation: authController,
       builder: (context, _) {

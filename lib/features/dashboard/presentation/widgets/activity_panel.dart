@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
 import 'package:rekognita_app/features/dashboard/domain/entities/dashboard_models.dart';
+import 'package:rekognita_app/features/dashboard/presentation/pages/activity_list_page.dart';
 import 'package:rekognita_app/shared/widgets/initials_avatar.dart';
 import 'package:rekognita_app/shared/widgets/rk_badge.dart';
 import 'package:rekognita_app/shared/widgets/rk_card.dart';
@@ -12,36 +13,73 @@ class ActivityPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Show at most 4 items in the dashboard preview
+    final preview = items.take(4).toList();
+
     return RkCard(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Остання активність',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: AppColors.dark,
-            ),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Остання активність',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.dark,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ActivityListPage(items: items),
+                    fullscreenDialog: true,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      'Усі записи',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.brand,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 11,
+                      color: AppColors.brand,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          ...items.asMap().entries.map((entry) {
+          const SizedBox(height: 10),
+          ...preview.asMap().entries.map((entry) {
             final index = entry.key;
             final item = entry.value;
             return Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 9),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: index == items.length - 1
+                    color: index == preview.length - 1
                         ? Colors.transparent
                         : AppColors.bg,
+                    width: 1.2,
                   ),
                 ),
               ),
               child: Row(
                 children: [
-                  InitialsAvatar(name: item.name, size: 36, radius: 10),
+                  InitialsAvatar(name: item.name, size: 34, radius: 9),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -51,7 +89,7 @@ class ActivityPanel extends StatelessWidget {
                           TextSpan(
                             text: '${item.name} ',
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: AppColors.dark,
                             ),
@@ -70,13 +108,14 @@ class ActivityPanel extends StatelessWidget {
                         Text(
                           item.time,
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             color: AppColors.muted,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   RkBadge(text: item.type),
                 ],
               ),

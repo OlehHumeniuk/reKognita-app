@@ -22,7 +22,7 @@ class UsageBanner extends StatelessWidget {
           'Self-Hosted • контур ізольований, ліміт сторінок не застосовується',
           style: TextStyle(
             color: AppColors.dark,
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -55,7 +55,7 @@ class UsageBanner extends StatelessWidget {
                       ? 'Ліміт сторінок майже вичерпано'
                       : 'Хмарний план • Поточний місяць',
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.dark,
                   ),
@@ -63,7 +63,7 @@ class UsageBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   '${company.pages} / ${company.limit} сторінок оброблено',
-                  style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                  style: const TextStyle(fontSize: 13, color: AppColors.muted),
                 ),
                 const SizedBox(height: 8),
                 ClipRRect(

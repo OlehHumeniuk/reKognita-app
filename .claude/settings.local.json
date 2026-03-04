@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \":*)",
+      "Bash(gh api \"repos/Orthanc-Tower/landing/git/trees/main?recursive=1\" --jq '[.tree[] | select\\(.path | test\\(\"\"SectionNav|Footer|Header|HeroSection\"\"\\)\\) | select\\(.path | endswith\\(\"\".tsx\"\"\\)\\) | .path]')"
+    ]
+  }
+}

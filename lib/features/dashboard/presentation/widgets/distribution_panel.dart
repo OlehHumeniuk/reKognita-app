@@ -17,7 +17,7 @@ class DistributionPanel extends StatelessWidget {
           const Text(
             'По типах документів',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: FontWeight.w700,
               color: AppColors.dark,
             ),
@@ -34,7 +34,7 @@ class DistributionPanel extends StatelessWidget {
                         child: Text(
                           item.name,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -42,7 +42,7 @@ class DistributionPanel extends StatelessWidget {
                       Text(
                         '${item.percent}%',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           color: AppColors.muted,
                         ),
                       ),
@@ -65,27 +65,44 @@ class DistributionPanel extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
             decoration: BoxDecoration(
               color: AppColors.bg,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppColors.border),
             ),
             child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
                   'Заощаджено людино-годин',
-                  style: TextStyle(fontSize: 11, color: AppColors.muted),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  '148 цього місяця',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.muted,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  '148',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 36,
                     fontWeight: FontWeight.w800,
                     color: AppColors.dark,
-                    letterSpacing: -0.8,
+                    letterSpacing: -1.5,
+                    height: 1.0,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'цього місяця',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.muted,
                   ),
                 ),
               ],

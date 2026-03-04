@@ -18,38 +18,46 @@ class TemplateSelectorItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 170),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: active ? AppColors.brand : AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: active ? AppColors.brand : AppColors.border,
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        color: active ? AppColors.brand : Colors.transparent,
+        child: Row(
           children: [
-            Text(
-              template.docType,
-              style: TextStyle(
-                color: active ? Colors.white : AppColors.dark,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    template.docType,
+                    style: TextStyle(
+                      color: active ? AppColors.white : AppColors.dark,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    '${template.fields.length} полів',
+                    style: TextStyle(
+                      color: active
+                          ? AppColors.white.withValues(alpha: 0.70)
+                          : AppColors.muted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
             ),
-            Text(
-              '${template.fields.length} полів',
-              style: TextStyle(
-                color: active
-                    ? Colors.white.withValues(alpha: 0.75)
-                    : AppColors.muted,
-                fontSize: 11,
-              ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 16,
+              color: active
+                  ? AppColors.white.withValues(alpha: 0.80)
+                  : AppColors.muted,
             ),
+            const SizedBox(width: 14),
           ],
         ),
       ),

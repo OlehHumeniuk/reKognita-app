@@ -1,6 +1,6 @@
+import 'package:core_ui/core_ui.dart' hide AppColors;
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
-import 'package:rekognita_app/core/data/mock_data.dart';
 import 'package:rekognita_app/features/templates/presentation/providers/templates_controller.dart';
 import 'package:rekognita_app/features/templates/presentation/widgets/template_editor.dart';
 import 'package:rekognita_app/features/templates/presentation/widgets/template_selector_item.dart';
@@ -28,12 +28,33 @@ class _TemplatesPageState extends State<TemplatesPage> {
     super.dispose();
   }
 
+  Future<void> _showNewTemplateDialog() async {
+    final name = await CustomInputDialog.showTextInput(
+      context: context,
+      title: 'Новий шаблон',
+      subtitle: 'Введіть назву типу документа',
+      cancelButtonText: 'Скасувати',
+      actionButtonText: 'Створити',
+      hintText: 'напр. Договори, Рахунки...',
+      actionButtonColor: AppColors.brand,
+      actionButtonHoverColor: AppColors.brandLight,
+      actionButtonSplashColor: AppColors.brandLight,
+      actionButtonTextColor: AppColors.white,
+    );
+
+    if (name != null && name.isNotEmpty) {
+      _controller.createTemplate(name);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        final current = seedTemplates[_controller.activeIndex];
+        final templates = _controller.templates;
+        final activeIndex = _controller.activeIndex;
+        final current = activeIndex != null ? templates[activeIndex] : null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -47,26 +68,57 @@ class _TemplatesPageState extends State<TemplatesPage> {
                 final wide = constraints.maxWidth > 900;
                 final selector = Column(
                   children: [
-                    ...seedTemplates.asMap().entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: TemplateSelectorItem(
-                          template: entry.value,
-                          active: entry.key == _controller.activeIndex,
-                          onTap: () => _controller.select(entry.key),
-                        ),
-                      );
-                    }),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      clipBehavior: Clip.hardEdge,
+                      child: Column(
+                        children: [
+                          ...templates.asMap().entries.map((entry) {
+                            final isLast = entry.key == templates.length - 1;
+                            return Column(
+                              children: [
+                                TemplateSelectorItem(
+                                  template: entry.value,
+                                  active: entry.key == activeIndex,
+                                  onTap: () => _controller.select(entry.key),
+                                ),
+                                if (!isLast)
+                                  const Divider(
+                                    height: 1,
+                                    thickness: 1,
+                                    color: AppColors.border,
+                                    indent: 29,
+                                  ),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     OutlinedButton(
-                      onPressed: () {},
+                      onPressed: _showNewTemplateDialog,
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(44),
+                        foregroundColor: AppColors.brand,
+                        backgroundColor:
+                            AppColors.brand.withValues(alpha: 0.05),
                         side: const BorderSide(
-                          color: AppColors.border,
+                          color: AppColors.brand,
                           width: 1.5,
                         ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: const Text('+ Новий шаблон'),
+                      child: const Text(
+                        '+ Новий шаблон',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
                     ),
                   ],
                 );
@@ -76,16 +128,20 @@ class _TemplatesPageState extends State<TemplatesPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(width: 240, child: selector),
-                      const SizedBox(width: 16),
-                      Expanded(child: TemplateEditor(template: current)),
+                      if (current != null) ...[
+                        const SizedBox(width: 16),
+                        Expanded(child: TemplateEditor(template: current)),
+                      ],
                     ],
                   );
                 }
                 return Column(
                   children: [
                     selector,
-                    const SizedBox(height: 12),
-                    TemplateEditor(template: current),
+                    if (current != null) ...[
+                      const SizedBox(height: 12),
+                      TemplateEditor(template: current),
+                    ],
                   ],
                 );
               },

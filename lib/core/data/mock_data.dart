@@ -1,10 +1,12 @@
 import 'package:rekognita_app/core/constants/app_colors.dart';
 import 'package:rekognita_app/features/company_context/domain/entities/company.dart';
 import 'package:rekognita_app/features/dashboard/domain/entities/dashboard_models.dart';
+import 'package:rekognita_app/features/dashboard/domain/entities/doc_record.dart';
 import 'package:rekognita_app/features/document_types/domain/entities/document_type.dart';
 import 'package:rekognita_app/features/integrations/domain/entities/integration.dart';
 import 'package:rekognita_app/features/team/domain/entities/employee.dart';
 import 'package:rekognita_app/features/templates/domain/entities/parsing_template.dart';
+import 'package:rekognita_app/features/templates/domain/entities/template_field.dart';
 
 const seedCompanies = [
   Company(
@@ -164,19 +166,119 @@ const seedTemplates = [
     id: 1,
     docType: 'Накладні',
     fields: [
-      'Назва товару',
-      'Артикул',
-      'Кількість',
-      'Ціна',
-      'Сума',
-      'Дата',
-      'Постачальник',
+      TemplateField(name: 'Назва товару', type: FieldType.text),
+      TemplateField(name: 'Артикул', type: FieldType.text),
+      TemplateField(
+        name: 'Позиції',
+        type: FieldType.table,
+        tableColumns: ['Назва', 'Кількість', 'Ціна', 'Сума'],
+      ),
+      TemplateField(
+        name: 'Підсумок',
+        type: FieldType.formula,
+        signatureLabel: 'М.П.',
+      ),
+      TemplateField(name: 'Дата', type: FieldType.text),
+      TemplateField(name: 'Постачальник', type: FieldType.text),
     ],
   ),
   ParsingTemplate(
     id: 2,
     docType: 'Медичні довідки',
-    fields: ['ПІБ', 'Дата народження', 'Діагноз', 'Лікар', 'Дата видачі'],
+    fields: [
+      TemplateField(name: 'ПІБ', type: FieldType.text),
+      TemplateField(name: 'Дата народження', type: FieldType.text),
+      TemplateField(name: 'Діагноз', type: FieldType.text),
+      TemplateField(name: 'Лікар', type: FieldType.text),
+      TemplateField(name: 'Дата видачі', type: FieldType.text),
+      TemplateField(
+        name: 'Печатка',
+        type: FieldType.image,
+        signatureLabel: 'Підпис лікаря',
+      ),
+    ],
+  ),
+];
+
+final seedDocRecords = [
+  DocRecord(
+    id: 'dr-001',
+    docNumber: 'Накладна №1247',
+    docType: 'Накладні',
+    typeIcon: '📦',
+    typeColor: AppColors.brandLight,
+    uploadedBy: 'Олексій Коваль',
+    uploadedAt: DateTime.now().subtract(const Duration(minutes: 2)),
+    status: DocRecordStatus.synced,
+    externalId: 'НАК-2024-1247',
+    integrationSystem: '1С/БАС',
+    extractedFields: {
+      'Постачальник': 'ТОВ "Промбуд"',
+      'Дата': '03.03.2026',
+      'Сума': '45 200,00 грн',
+      'ПДВ': '7 533,33 грн',
+      'Товарів': '12 позицій',
+      'Артикул': 'ПБ-445-А',
+      'Відповідальний': 'Олексій Коваль',
+    },
+  ),
+  DocRecord(
+    id: 'dr-002',
+    docNumber: 'Рахунок-фактура №RF-2834',
+    docType: 'Рахунки',
+    typeIcon: '💰',
+    typeColor: AppColors.warning,
+    uploadedBy: 'Марина Петрова',
+    uploadedAt: DateTime.now().subtract(const Duration(minutes: 14)),
+    status: DocRecordStatus.processed,
+    integrationSystem: '1С/БАС',
+    extractedFields: {
+      'Постачальник': 'ФОП Іваненко',
+      'Дата': '03.03.2026',
+      'Сума': '12 800,00 грн',
+      'ПДВ': '2 133,33 грн',
+      'Послуга': 'Транспортні послуги',
+      'Договір': 'ДГ-2024-18',
+    },
+  ),
+  DocRecord(
+    id: 'dr-003',
+    docNumber: 'Накладна №1246',
+    docType: 'Накладні',
+    typeIcon: '📦',
+    typeColor: AppColors.brandLight,
+    uploadedBy: 'Тетяна Мороз',
+    uploadedAt: DateTime.now().subtract(const Duration(minutes: 31)),
+    status: DocRecordStatus.synced,
+    externalId: 'НАК-2024-1246',
+    integrationSystem: '1С/БАС',
+    extractedFields: {
+      'Постачальник': 'ТОВ "МеталКонструкція"',
+      'Дата': '03.03.2026',
+      'Сума': '28 700,00 грн',
+      'ПДВ': '4 783,33 грн',
+      'Товарів': '7 позицій',
+      'Артикул': 'МК-221-Б',
+      'Відповідальний': 'Тетяна Мороз',
+    },
+  ),
+  DocRecord(
+    id: 'dr-004',
+    docNumber: 'Медична довідка №МД-891',
+    docType: 'Медичні',
+    typeIcon: '🏥',
+    typeColor: AppColors.success,
+    uploadedBy: 'Іван Сидоренко',
+    uploadedAt: DateTime.now().subtract(const Duration(hours: 1)),
+    status: DocRecordStatus.pending,
+    integrationSystem: 'MedCRM',
+    extractedFields: {
+      'ПІБ': 'Сидоренко Іван Петрович',
+      'Дата народження': '15.06.1985',
+      'Діагноз': 'Здоровий',
+      'Лікар': 'Ковтун О.В.',
+      'Дата видачі': '03.03.2026',
+    },
   ),
 ];
 
