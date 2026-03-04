@@ -9,9 +9,9 @@ class DashboardApiClient {
 
   final http.Client _httpClient;
 
-  Future<Map<String, dynamic>> fetchOverview(String accessToken) async {
+  Future<Map<String, dynamic>> fetchOverview(String accessToken, {String period = 'today'}) async {
     final uri = Uri.parse(
-      '${BackendConfig.baseUrl}${BackendConfig.apiPrefix}/manager/dashboard-overview',
+      '${BackendConfig.baseUrl}${BackendConfig.apiPrefix}/manager/dashboard-overview?period=$period',
     );
     final response = await _httpClient.get(
       uri,

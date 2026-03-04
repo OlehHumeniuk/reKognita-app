@@ -12,27 +12,32 @@ class DashboardController extends ChangeNotifier {
 
   bool _isLoading = false;
   String? _error;
+  String _period = 'today';
   Company? _company;
   List<DashboardStat> _stats = [];
   List<ActivityItem> _activity = [];
   List<DistributionItem> _distribution = [];
   List<DocRecord> _docRecords = [];
+  int _savedHours = 0;
 
   bool get isLoading => _isLoading;
   String? get error => _error;
+  String get period => _period;
   Company? get company => _company;
   List<DashboardStat> get stats => _stats;
   List<ActivityItem> get activity => _activity;
   List<DistributionItem> get distribution => _distribution;
   List<DocRecord> get docRecords => _docRecords;
+  int get savedHours => _savedHours;
 
-  Future<void> load(String accessToken) async {
+  Future<void> load(String accessToken, {String period = 'today'}) async {
+    _period = period;
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final data = await _apiClient.fetchOverview(accessToken);
+      final data = await _apiClient.fetchOverview(accessToken, period: period);
       _company = Company.fromJson(data['company'] as Map<String, dynamic>);
       _stats = (data['stats'] as List)
           .cast<Map<String, dynamic>>()
@@ -69,6 +74,7 @@ class DashboardController extends ChangeNotifier {
           .cast<Map<String, dynamic>>()
           .map(DocRecord.fromJson)
           .toList();
+      _savedHours = data['savedHours'] as int? ?? 0;
     } on DashboardApiException catch (e) {
       _error = e.message;
     } catch (_) {

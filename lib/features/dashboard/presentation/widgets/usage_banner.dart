@@ -52,17 +52,6 @@ class UsageBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  pct > 85
-                      ? 'Ліміт сторінок майже вичерпано'
-                      : 'Хмарний план • Поточний місяць',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.dark,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
                   '${company.pages} / ${company.limit} сторінок оброблено',
                   style: const TextStyle(fontSize: 13, color: AppColors.muted),
                 ),

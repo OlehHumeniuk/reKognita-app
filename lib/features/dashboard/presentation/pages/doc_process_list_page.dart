@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
 import 'package:rekognita_app/features/dashboard/domain/entities/doc_record.dart';
@@ -17,20 +19,42 @@ class _DocProcessListPageState extends State<DocProcessListPage> {
   String _query = '';
   DocRecordStatus? _filterStatus;
   String? _filterDocType;
+  Timer? _debounceTimer;
+  late final Map<String, String> _searchIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchIndex = {
+      for (final r in widget.records)
+        r.id: [
+          r.docNumber,
+          r.uploadedBy,
+          r.docType,
+          r.integrationSystem,
+          r.externalId ?? '',
+          ...r.extractedFields.values,
+        ].join(' ').toLowerCase(),
+    };
+  }
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
+  void _onSearchChanged(String value) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _query = value.toLowerCase().trim());
+    });
+  }
+
   List<DocRecord> get _filtered {
     return widget.records.where((r) {
-      final q = _query.toLowerCase();
-      final matchesQuery = q.isEmpty ||
-          r.docNumber.toLowerCase().contains(q) ||
-          r.uploadedBy.toLowerCase().contains(q) ||
-          r.docType.toLowerCase().contains(q);
+      final matchesQuery = _query.isEmpty || (_searchIndex[r.id] ?? '').contains(_query);
       final matchesStatus = _filterStatus == null || r.status == _filterStatus;
       final matchesType = _filterDocType == null || r.docType == _filterDocType;
       return matchesQuery && matchesStatus && matchesType;
@@ -62,9 +86,9 @@ class _DocProcessListPageState extends State<DocProcessListPage> {
             child: TextField(
               controller: _searchController,
               style: const TextStyle(color: Colors.white, fontSize: 14),
-              onChanged: (v) => setState(() => _query = v),
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Пошук за документом, співробітником або типом…',
+                hintText: 'Пошук за документом, полями, системою…',
                 hintStyle: TextStyle(
                   color: Colors.white.withValues(alpha: 0.4),
                   fontSize: 14,

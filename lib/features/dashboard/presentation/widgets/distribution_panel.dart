@@ -4,9 +4,23 @@ import 'package:rekognita_app/features/dashboard/domain/entities/dashboard_model
 import 'package:rekognita_app/shared/widgets/rk_card.dart';
 
 class DistributionPanel extends StatelessWidget {
-  const DistributionPanel({required this.items, super.key});
+  const DistributionPanel({
+    required this.items,
+    required this.period,
+    super.key,
+  });
 
   final List<DistributionItem> items;
+  final String period;
+
+  static String _periodLabel(String period) => switch (period) {
+        'today' => 'сьогодні',
+        'week' => 'за тиждень',
+        'month' => 'за місяць',
+        'year' => 'за рік',
+        'all' => 'за весь час',
+        _ => '',
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -14,13 +28,28 @@ class DistributionPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'По типах документів',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: AppColors.dark,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              const Text(
+                'По типах документів',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.dark,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _periodLabel(period),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.muted,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           ...items.map(
@@ -60,52 +89,6 @@ class DistributionPanel extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.bg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  'Заощаджено людино-годин',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.muted,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  '148',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.dark,
-                    letterSpacing: -1.5,
-                    height: 1.0,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'цього місяця',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.muted,
-                  ),
-                ),
-              ],
             ),
           ),
         ],

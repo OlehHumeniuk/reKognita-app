@@ -14,24 +14,33 @@ class IntegrationStatusBadge extends StatelessWidget {
       IntegrationStatus.pending => AppColors.warning,
       IntegrationStatus.disconnected => AppColors.danger,
     };
-    final text = switch (status) {
-      IntegrationStatus.connected => '● Підключено',
-      IntegrationStatus.pending => '◌ Очікує',
-      IntegrationStatus.disconnected => '○ Відключено',
+    final label = switch (status) {
+      IntegrationStatus.connected => 'Підключено',
+      IntegrationStatus.pending => 'Очікує',
+      IntegrationStatus.disconnected => 'Відключено',
     };
+    final textStyle = TextStyle(
+      color: color,
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(99),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Transform.translate(
+            offset: const Offset(0, -1),
+            child: Text('●', style: textStyle),
+          ),
+          const SizedBox(width: 4),
+          Text(label, style: textStyle),
+        ],
       ),
     );
   }
