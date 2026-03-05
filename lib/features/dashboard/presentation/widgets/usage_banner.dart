@@ -33,7 +33,7 @@ class UsageBanner extends StatelessWidget {
     final pct = (company.pages / company.limit! * 100).round();
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: pct > 85
             ? const Color(0xFFFFFBEB)
@@ -45,34 +45,35 @@ class UsageBanner extends StatelessWidget {
               : AppColors.brand.withValues(alpha: 0.2),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${company.pages} / ${company.limit} сторінок оброблено',
-                  style: const TextStyle(fontSize: 13, color: AppColors.muted),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  '${company.pages}/${company.limit} сторінок оброблено',
+                  style: const TextStyle(fontSize: 15, color: AppColors.dark),
                 ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    minHeight: 5,
-                    value: pct / 100,
-                    color: pct > 85 ? AppColors.warning : AppColors.brand,
-                    backgroundColor: AppColors.border,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 12),
+              FilledButton(
+                onPressed: onUpgrade,
+                style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
+                child: const Text('Поповнити'),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          FilledButton(
-            onPressed: onUpgrade,
-            style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
-            child: const Text('Поповнити'),
+          // const SizedBox(height: 2),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              minHeight: 5,
+              value: pct / 100,
+              color: pct > 85 ? AppColors.warning : AppColors.brand,
+              backgroundColor: AppColors.border,
+            ),
           ),
         ],
       ),

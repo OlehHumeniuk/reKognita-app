@@ -59,6 +59,7 @@ class _RekognitaAppState extends State<RekognitaApp> {
       builder: (context, _) {
         final loggedIn = _authController.isLoggedIn;
         return MaterialApp(
+          key: ValueKey(loggedIn),
           debugShowCheckedModeBanner: false,
           title: 'Rekognita Manager',
           theme: buildAppTheme(),

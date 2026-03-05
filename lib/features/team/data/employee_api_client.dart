@@ -130,13 +130,26 @@ class EmployeeApiClient {
     }
   }
 
+  Future<Employee> toggleBlock({
+    required String token,
+    required int id,
+  }) async {
+    final uri = Uri.parse('${BackendConfig.baseUrl}$_base/$id/toggle-block');
+    final response = await _httpClient.patch(uri, headers: _headers(token));
+    _assertOk(response, 200);
+    return _fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+
   Employee _fromJson(Map<String, dynamic> json) {
+    final lastSeenStr = json['lastSeenAt'] as String?;
     return Employee(
       id: json['id'] as int,
       name: json['name'] as String,
       role: json['role'] as String,
       dept: json['dept'] as String,
       isActive: json['isActive'] as bool,
+      isBlocked: json['isBlocked'] as bool? ?? false,
+      lastSeenAt: lastSeenStr != null ? DateTime.parse(lastSeenStr) : null,
       docs: (json['docs'] as List<dynamic>).map((e) => e as String).toList(),
       inviteCode: json['inviteCode'] as String?,
     );

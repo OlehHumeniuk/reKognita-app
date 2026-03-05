@@ -162,6 +162,25 @@ class TeamController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> toggleBlock(int id) async {
+    _status = TeamStatus.saving;
+    notifyListeners();
+
+    try {
+      final updated = await _apiClient.toggleBlock(token: _token, id: id);
+      _employees = [for (final e in _employees) if (e.id == id) updated else e];
+      if (_selected?.id == id) _selected = updated;
+      _status = TeamStatus.idle;
+    } on EmployeeApiException catch (e) {
+      _status = TeamStatus.error;
+      _error = e.message;
+    } catch (_) {
+      _status = TeamStatus.error;
+      _error = 'Не вдалося змінити блокування';
+    }
+    notifyListeners();
+  }
+
   Future<void> addDoc(int id, String docType) async {
     _status = TeamStatus.saving;
     notifyListeners();

@@ -9,7 +9,7 @@ class TeamMemberTile extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.onEdit,
-    this.onToggleStatus,
+    this.onToggleBlock,
     this.onDelete,
     this.onShowQr,
     super.key,
@@ -19,7 +19,7 @@ class TeamMemberTile extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback? onEdit;
-  final VoidCallback? onToggleStatus;
+  final VoidCallback? onToggleBlock;
   final VoidCallback? onDelete;
   final VoidCallback? onShowQr;
 
@@ -42,7 +42,7 @@ class TeamMemberTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              // Status dot + lock icon
+              // Online dot + blocked lock
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -51,10 +51,10 @@ class TeamMemberTile extends StatelessWidget {
                     height: 8,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: employee.isActive ? AppColors.success : AppColors.muted,
+                      color: employee.isOnline ? AppColors.success : AppColors.muted,
                     ),
                   ),
-                  if (!employee.isActive) ...[
+                  if (employee.isBlocked) ...[
                     const SizedBox(height: 3),
                     const Icon(
                       Icons.lock_rounded,
@@ -75,17 +75,29 @@ class TeamMemberTile extends StatelessWidget {
                   children: [
                     Text(
                       employee.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.dark,
+                        color: employee.isBlocked
+                            ? AppColors.muted
+                            : AppColors.dark,
+                        decoration: employee.isBlocked
+                            ? TextDecoration.lineThrough
+                            : null,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      '${employee.role} • ${employee.dept}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.muted),
+                      employee.isBlocked
+                          ? '${employee.role} • ${employee.dept} • Заблоковано'
+                          : '${employee.role} • ${employee.dept}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: employee.isBlocked
+                            ? AppColors.danger
+                            : AppColors.muted,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -97,12 +109,12 @@ class TeamMemberTile extends StatelessWidget {
                 _TileAction(icon: Icons.qr_code_rounded, onTap: onShowQr),
               _TileAction(icon: Icons.edit_outlined, onTap: onEdit),
               _TileAction(
-                icon: employee.isActive
-                    ? Icons.lock_outline_rounded
-                    : Icons.lock_open_rounded,
-                isDanger: employee.isActive,
-                isSuccess: !employee.isActive,
-                onTap: onToggleStatus,
+                icon: employee.isBlocked
+                    ? Icons.lock_open_rounded
+                    : Icons.lock_outline_rounded,
+                isDanger: !employee.isBlocked,
+                isSuccess: employee.isBlocked,
+                onTap: onToggleBlock,
               ),
               _TileAction(
                 icon: Icons.delete_outline_rounded,

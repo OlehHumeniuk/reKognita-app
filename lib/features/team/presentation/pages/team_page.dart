@@ -1,5 +1,6 @@
 import 'package:core_ui/core_ui.dart' hide AppColors;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:rekognita_app/core/constants/app_colors.dart';
 import 'package:rekognita_app/features/dashboard/domain/entities/doc_record.dart';
@@ -126,6 +127,72 @@ class _TeamPageState extends State<TeamPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F7FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.password_rounded,
+                        size: 18,
+                        color: AppColors.brand,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SelectableText(
+                          employee.inviteCode!,
+                          style: const TextStyle(
+                            color: AppColors.dark,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Скопіювати код',
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: employee.inviteCode!),
+                          );
+                          if (!ctx.mounted) return;
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(
+                              content: Text('Код скопійовано'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.copy_rounded,
+                          color: AppColors.brand,
+                          size: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Співробітник може сканувати QR або ввести цей код вручну.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
@@ -465,7 +532,7 @@ class _TeamPageState extends State<TeamPage> {
               selected: _controller.selected?.id == employee.id,
               onTap: () => _controller.select(employee),
               onEdit: () => _showEditDialog(employee),
-              onToggleStatus: () => _controller.toggleStatus(employee.id),
+              onToggleBlock: () => _controller.toggleBlock(employee.id),
               onDelete: () => _confirmDelete(employee.id, employee.name),
               onShowQr: employee.inviteCode != null
                   ? () => _showQrDialog(employee)
